@@ -1,6 +1,12 @@
 #ifndef __KEYBOARD__
 #define __KEYBOARD__
 
+// Include Keyboard Library
+#include "timer.h"
+
+// Keyboard is on AIO0
+#define KEYBOARD_AIO 0
+
 // Keys
 #define KEYBOARD_NONE  0
 #define KEYBOARD_7     1
@@ -25,29 +31,27 @@
 #define KEYBOARD_DELTA          10
 #define KEYBOARD_OFF            150
 
-// Debug mode
-// #define DEBUG_KEYBOARD
-
 // Keyboard Class 
 class Keyboard
 {
 
   private:
+
+    Timer timer;
   
     // Buttons analog values
     unsigned int buttons[KEYBOARD_NUMBER_BUTTONS] = { 1023, 930, 854, 799, 678, 636, 599, 571, 518, 493, 471, 453, 411, 330, 276, 238 };
 
-    // AIO associated to keyboard
-    unsigned char aio;
-  
   public:
 
     // Begin keyboard
-    void begin(unsigned char aio);
+    void begin(void (* timer_reset_event), void (* keyboard_time_out_event));
     
     // Scan button pressed
     unsigned char scan();
 
 };
+
+extern Keyboard keyboard;
 
 #endif

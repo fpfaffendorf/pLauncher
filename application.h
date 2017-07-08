@@ -8,12 +8,17 @@
 #include "keyboard.h"
 // Include Screen Library
 #include "screen.h"
+// Include Timer Library
+#include "timer.h"
 
 // Application name and version
-#define APPLICATION_INFO "pLauncher v1.0"
+#define APPLICATION_INFO "pLauncher v1.3"
 
-// Keyboard is on AIO0
-#define KEYBOARD_AIO 0
+// Max number of programs per page
+#define MAX_NUMBER_PROGRAMS 6
+
+// Backlight timer time out ticks
+#define BACKLIGHT_TIMER_TIME_OUT_TICKS  250000 // (~30 seconds)
 
 // Application Class 
 class Application
@@ -24,29 +29,29 @@ class Application
     // Process instance
     Process process;    
 
-    // Keyboard intance
-    Keyboard keyboard;
+    // Programs Current Page
+    unsigned char programs_page = 0;
 
-    // Screen instance
-    Screen screen;
-
-    // List programs screen
-    void programs();
-
-    // Configuration
-    void configuration();
-
-    // Configuration Date and Time
-    void configuration_date_time();
-
-    // Configuration IP
-    void configuration_ip();
+    // List programs in a given directory
+    void list_programs(String directory);
+  
+    // Format program option
+    String format_program_option(unsigned char option, String title);
 
     // Execute program
     void execute(String program);
 
     // Capture argument
-    String captureArgument(String argument_title);
+    String capture_argument(String argument_title);
+
+    // Screen Backlight
+    void screen_backlight();
+
+    // Keyboard reset timer function
+    static void keyboard_reset_event();
+
+    // Keyboard time out function
+    static void keyboard_time_out_event();
   
   public:
 
@@ -57,5 +62,7 @@ class Application
     void menu();
         
 };
+
+extern Application application;
 
 #endif

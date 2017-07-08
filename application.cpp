@@ -7,12 +7,15 @@
 #include "keyboard.h"
 // Include Screen Library
 #include "screen.h"
+// Include Timer Library
+#include "timer.h"
 
+// Application Begin
 void Application::begin()
 {
 
-  // Begin keyboard on KEYBOARD_AIO
-  keyboard.begin(KEYBOARD_AIO);
+  // Begin keyboard
+  keyboard.begin(keyboard_reset_event, keyboard_time_out_event);
 
   // Begin screen
   screen.begin();
@@ -27,150 +30,113 @@ void Application::begin()
   
 }
 
-void Application::menu()
+static void Application::menu()
 {
 
   // Print screen options
-  screen.print("Menu", 5, 10);
-  screen.print("1- Programs", 5, 20);
-  screen.print("9- Configuration", 5, 30);
+  screen.print("1- Programs", 5, 10);
+  screen.print("2- Configuration", 5, 20);
+  screen.print("3- Screen backlight", 5, 30);  
   screen.flush();
   
   // Scan for button pressed
   unsigned char button = keyboard.scan();    
+  programs_page = 0;
   switch (button)
   {
     // Button "1" pressed
     case KEYBOARD_1:
     {
-      programs();
+      list_programs("programs");
       break;
     }     
-    // Button "9" pressed
-    case KEYBOARD_9:
+    // Button "2" pressed
+    case KEYBOARD_2:
     {
-      configuration();
+      list_programs("configuration");
+      break;
+    }     
+    // Button "3" pressed
+    case KEYBOARD_3:
+    {
+      screen_backlight();
       break;
     }     
   }
   
 }
 
-void Application::programs()
+static void Application::list_programs(String directory)
 {
 
   // Loading Screen
   screen.loading();
 
   // Run ls command
-  process.runShellCommand("cd /root/; ls -1 *.py");
+  process.runShellCommand("cd /root/" + directory + "; ls -1 *.py");
 
   // Do nothing until the process finishes
   while (process.running());
 
   // Read output, parse, store in the program list and print screen
   String string = process.readString();
-  String stringParse;
+  String string_parse;
   unsigned char option = 1;
-  int y = 10;
-  String programsArray[5];
+  unsigned char parsed_options = 0;
+  unsigned char y = 10;
+  String programs_array[5];
   for (int i = 0; i <= string.length(); i++)
   {
     if (string[i] == '\n')
     {
-      String stringParseOption = "";
-      stringParseOption += ((char)(option + 48));
-      stringParseOption += "- ";
-      programsArray[option-1] = stringParse;
-      screen.print(stringParseOption + stringParse, 5, y);  
-      y += 10;
-      option++;
-      stringParse = "";
+      parsed_options ++;
+      if (parsed_options >= programs_page * MAX_NUMBER_PROGRAMS)
+      {
+        programs_array[option - 1] = directory + "/" + string_parse;
+        screen.print(format_program_option(option, string_parse), 5, y);  
+        y += 10;
+        option++;
+        if (option == MAX_NUMBER_PROGRAMS) {
+          screen.print(format_program_option(option, "Next Page ..."), 5, y);
+          break;
+        }        
+      }
+      string_parse = "";
     }
     else
     {
-      stringParse += string[i];    
+      string_parse += string[i];    
     }
   }  
   // Flush screen output
   screen.flush();
 
   // Scan for button pressed
-  unsigned char button = keyboard.scan();    
+  unsigned char button = keyboard.scan();   
+
   // Button (Number) pressed
-  switch (button) 
-  {
-    case KEYBOARD_1:
-    {
-      execute(programsArray[0]);    
-    }
-    break; 
-    case KEYBOARD_2:
-    {
-      execute(programsArray[1]);    
-    }
-    break; 
-    case KEYBOARD_3:
-    {
-      execute(programsArray[2]);    
-    }
-    break; 
-    case KEYBOARD_4:
-    {
-      execute(programsArray[3]);    
-    }
-    break; 
-    case KEYBOARD_5:
-    {
-      execute(programsArray[4]);    
-    }
-    break; 
-  }
+       if ((button == KEYBOARD_1) && (option >= 1)) execute(programs_array[0]);
+  else if ((button == KEYBOARD_2) && (option >= 2)) execute(programs_array[1]);
+  else if ((button == KEYBOARD_3) && (option >= 3)) execute(programs_array[2]);
+  else if ((button == KEYBOARD_4) && (option >= 4)) execute(programs_array[3]);
+  else if ((button == KEYBOARD_5) && (option >= 5)) execute(programs_array[4]);
+  else if ((button == KEYBOARD_6) && (option >= 6)) { programs_page ++; list_programs(directory); }
   
 }
 
-void Application::configuration()
+static String Application::format_program_option(unsigned char option, String title)
 {
-
-  // Print screen options
-  screen.print("Configuration", 5, 10);
-  screen.print("1- Date and Time", 5, 20);
-  screen.print("2- Read IP", 5, 30);
-  screen.flush();
-  
-  // Scan for button pressed
-  unsigned char button = keyboard.scan();    
-  switch (button)
-  {
-    // Button "1" pressed
-    case KEYBOARD_1:
-    {
-      configuration_date_time();
-      break;
-    }     
-    // Button "2" pressed
-    case KEYBOARD_2:
-    {
-      configuration_ip();
-      break;
-    }     
-  }
-
+    String s = "";
+    s += ((char)(option + 48));
+    s += "- ";
+    title.replace(".py", "");
+    title.replace("-", " ");
+    title[0] = title[0] - 32;
+    s += title;
+    return  s;
 }
 
-void Application::configuration_date_time()
-{
-  // Print current Date Time
-  execute("sys/dt.py");     
-}
-
-void Application::configuration_ip()
-{
-  // Print current IP
-  execute("sys/ip.py");   
-}
-
-void Application::execute(String program)
+static void Application::execute(String program)
 {
 
   if (program == "") return;
@@ -181,20 +147,18 @@ void Application::execute(String program)
   process.runShellCommand("/usr/bin/python /root/" + program + " --help");
   while (process.running());
   String string = process.readString();
-  String stringParse;
+  String string_parse;
   String arguments;
   for (int i = 0; i <= string.length(); i++)
   {
     if (string[i] == '\n')
     {
-      screen.print(stringParse, 5, 10);
-      screen.flush();       
-      arguments += captureArgument(stringParse) + " ";      
-      stringParse = "";
+      arguments += capture_argument(string_parse) + " ";      
+      string_parse = "";      
     }
     else
     {
-      stringParse += string[i];    
+      string_parse += string[i];    
     }
   }  
 
@@ -230,11 +194,14 @@ void Application::execute(String program)
 
 }
 
-String Application::captureArgument(String argument_title)
+static String Application::capture_argument(String argument_title)
 {
 
   String argument = "";
   bool dot = false;
+
+  screen.print(argument_title, 5, 10);
+  screen.flush();       
 
   // Scan for button pressed
   for(;;)
@@ -272,3 +239,23 @@ String Application::captureArgument(String argument_title)
   }  
 
 }
+
+static void Application::screen_backlight()
+{
+  String level = capture_argument("Backlight Level: [0..9]");
+  byte byte_level = SCREEN_DEFAULT_BACKLIGHT_LEVEL;
+  if (level.length() == 1) byte_level = level[0] - 48;  
+  screen.backlight_level(byte_level);
+}
+
+static void Application::keyboard_reset_event()
+{
+  screen.backlight_level(screen.get_last_positive_backlight_level());
+}
+
+static void Application::keyboard_time_out_event()
+{
+  screen.backlight_level(0);
+}
+
+Application application;

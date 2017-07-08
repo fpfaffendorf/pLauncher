@@ -1,9 +1,25 @@
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
-from __future__ import division		# Force floating point division
-import sys
+from __future__ import division
 import math
 import datetime
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Location
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+def location():
+
+	file = open("/root/configuration/location.data", "r")
+        lat_d = float(file.readline())
+        lat_m = float(file.readline())
+        lat_s = float(file.readline())
+        long_d = float(file.readline())
+        long_m = float(file.readline())
+        long_s = float(file.readline())
+        alt = float(file.readline())
+        file.close()
+
+	return [lat_d, lat_m, lat_s, long_d, long_m, long_s, alt]
 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # PI constant
@@ -42,8 +58,8 @@ def degree_to_rad (n):
 def hms_to_decimal (h, m, s):
 
 	if (h < 0):
-		m = m * -1;
-		s = s * -1;
+		if (m > 0): m = m * -1;
+		if (s > 0): s = s * -1;
 	
 	m = m + (s / 60)
 	h = h + (m / 60)
@@ -68,11 +84,11 @@ def decimal_to_hms (h):
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Degree to decimal conversion 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
-def degree_to_decimal (d, m, s):
+def dms_to_decimal (d, m, s):
 
 	if (d < 0):
-		m = m * -1;
-		s = s * -1;
+		if (m > 0): m = m * -1;
+		if (s > 0): s = s * -1;
 
         m = m + (s / 60)
         d = d + (m / 60)
@@ -82,7 +98,7 @@ def degree_to_decimal (d, m, s):
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Decimal to HMS conversion 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
-def decimal_to_degree (d):
+def decimal_to_dms (d):
 
 	a = [0, 0, 0]
 
@@ -97,27 +113,31 @@ def decimal_to_degree (d):
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Calendar to Julian Date
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
-def jd (calendar, year, month, day):
+def jd (calendar, year, month, day, h, m, s):
 
-	if (month <= 2):
-		year = year - 1
-		month = month + 12
-	
-	a = int_meeus(year / 100)
+        if (month <= 2):
+                year = year - 1
+                month = month + 12
 
-	if (calendar == "g"):
-		b = 2 - a + int_meeus(a / 4)
-	elif (calendar == "j"):
-		b = 0
+        a = int_meeus(year / 100)
 
-	return int_meeus(365.25 * (year + 4716)) + int_meeus(30.6001 * (month + 1)) + day + b - 1524.5
+        if (calendar == "g"):
+                b = 2 - a + int_meeus(a / 4)
+        elif (calendar == "j"):
+                b = 0
+
+        m = float(m + (s / 60))
+        h = float(h + (m / 60))
+        h = h / 24
+
+        return int_meeus(365.25 * (year + 4716)) + int_meeus(30.6001 * (month + 1)) + day + b - 1524.5 + h
 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Centuries from the Epoch J2000.0
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 def time_t(calendar, year, month, day):
 
-	return (jd(calendar, year, month, day) - 2451545.0) / 36525
+	return (jd(calendar, year, month, day, 0, 0, 0) - 2451545.0) / 36525
 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Less precise implementation (delta psi +/- 0.5 seconds; delta epsilon +/- 0.1 seconds)
@@ -157,7 +177,7 @@ def true_obliquity_ecliptic(calendar, year, month, day):
 
 	s = -46.8150 * t - 0.00059 * t * t + 0.001813 * t * t * t
 
-	epsilon_zero = ((degree_to_decimal(23, 26, 21.448) * 3600) + s) / 3600
+	epsilon_zero = ((dms_to_decimal(23, 26, 21.448) * 3600) + s) / 3600
 
 	return ((epsilon_zero * 3600) + delta_epsilon) / 3600
 
@@ -198,14 +218,28 @@ def aparent_sidereal_time_greenwich(calendar, year, month, day, hour, min, sec):
 		st = st - 24
 
 	return st
+
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Terrestrial Dinamical Time
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+def tdt (year, month, day, h, m, s):
+
+        year = float(year + month / 12)
+        t = (year - 2000) / 1000
+        t = float(102 + 102 * t + 25.3 * t * t + 0.37 * (year - 2100))
+
+        d = datetime.datetime(int(year), month, day, h, m, s)
+        d = d + datetime.timedelta(seconds = t)
+
+        return [d.year, d.month, d.day, d.hour, d.minute, d.second]
 	
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Azimuth and Altitude 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 def az_alt(calendar, year, month, day, hour, min, sec, lat_deg, lat_min, lat_sec, lon_deg, lon_min, lon_sec, ra_hour, ra_min, ra_sec, dec_deg, dec_min, dec_sec):
 
-	ast = aparent_sidereal_time_greenwich(calendar, year, month, day, hour, min, sec);
-	l = degree_to_decimal(lon_deg, lon_min, lon_sec) * 24 / 360
+	ast = aparent_sidereal_time_greenwich(calendar, year, month, day, hour, min, sec)
+	l = dms_to_decimal(lon_deg, lon_min, lon_sec) * 24 / 360
 	alpha = hms_to_decimal(ra_hour, ra_min, ra_sec)	
 
 	h = (ast - l - alpha) * 360 / 24
@@ -214,55 +248,67 @@ def az_alt(calendar, year, month, day, hour, min, sec, lat_deg, lat_min, lat_sec
 		h = h + 360
 
 	aux_1 = math.sin(degree_to_rad(h)) 
-	aux_2 = math.cos(degree_to_rad(h)) * math.sin(degree_to_rad(degree_to_decimal(lat_deg, lat_min, lat_sec)))
-	aux_3 = math.tan(degree_to_rad(degree_to_decimal(dec_deg, dec_min, dec_sec))) * math.cos(degree_to_rad(degree_to_decimal(lat_deg, lat_min, lat_sec)))
+	aux_2 = math.cos(degree_to_rad(h)) * math.sin(degree_to_rad(dms_to_decimal(lat_deg, lat_min, lat_sec)))
+	aux_3 = math.tan(degree_to_rad(dms_to_decimal(dec_deg, dec_min, dec_sec))) * math.cos(degree_to_rad(dms_to_decimal(lat_deg, lat_min, lat_sec)))
 	tan_a = aux_1 / (aux_2 - aux_3)
 
 	az = rad_to_degree(math.atan(tan_a))
 
-	if (aux_1 < 0):
-		if (tan_a < 0):
-			az = az + 180
+	if (lat_deg < 0):
+		if (aux_1 < 0):
+			if (tan_a < 0):
+				az = az + 180
+			else:
+				az = az
 		else:
-			az = az
-	else:
-		if (tan_a < 0):
-			az = az + 360
-		else:
-			az = az + 180
+			if (tan_a < 0):
+				az = az + 360
+			else:
+				az = az + 180
 
 
-	sin_h = math.sin(degree_to_rad(degree_to_decimal(lat_deg, lat_min, lat_sec))) *  math.sin(degree_to_rad(degree_to_decimal(dec_deg, dec_min, dec_sec)))
-	sin_h = sin_h + math.cos(degree_to_rad(degree_to_decimal(lat_deg, lat_min, lat_sec))) *  math.cos(degree_to_rad(degree_to_decimal(dec_deg, dec_min, dec_sec))) * math.cos(degree_to_rad(h))
+	sin_h = math.sin(degree_to_rad(dms_to_decimal(lat_deg, lat_min, lat_sec))) *  math.sin(degree_to_rad(dms_to_decimal(dec_deg, dec_min, dec_sec)))
+	sin_h = sin_h + math.cos(degree_to_rad(dms_to_decimal(lat_deg, lat_min, lat_sec))) *  math.cos(degree_to_rad(dms_to_decimal(dec_deg, dec_min, dec_sec))) * math.cos(degree_to_rad(h))
 
-	coord = [decimal_to_degree(az), decimal_to_degree(rad_to_degree(math.asin(sin_h)))]
+	az = decimal_to_dms(az)
+	alt = decimal_to_dms(rad_to_degree(math.asin(sin_h)))
+
+	coord = [ [az[0], az[1], az[2]], [alt[0], math.fabs(alt[1]), math.fabs(alt[2])] ]
 	return coord
 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Main Program
+# Find E
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+def find_E (M, e):
+
+        M = degree_to_rad(M)
+        E = M
+        new_E = M
+
+        while True:
+
+                E = new_E
+                new_E = E + ( M + e * math.sin(E) - E ) / ( 1 - e * math.cos(E) )
+
+                if (E == new_E): break;
+
+        return decimal_to_dms (rad_to_degree(new_E))
+
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Find v
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+def find_v (e, E):
+
+        E = degree_to_rad(E)
+        return decimal_to_dms(rad_to_degree(math.atan(math.sqrt((1 + e) / (1 - e)) * math.tan (E / 2)) * 2))
+
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Find r
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------
+def find_r (a, e, E):
+
+        E = degree_to_rad(E)
+        return a * ( 1 - e * math.cos(E) )
+
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-if len(sys.argv) == 2 and sys.argv[1] == "--help":
-
-	print "RA Hour (Epoch 2000.0)"
-	print "RA Min (Epoch 2000.0)"
-	print "RA Sec (Epoch 2000.0)"
-	print "Dec Deg (Epoch 2000.0)"
-	print "Dec Min (Epoch 2000.0)"
-	print "Dec Sec (Epoch 2000.0)"
-
-else:
-
-	now = datetime.datetime.utcnow()
-	year = now.year
-	month = now.month
-	day = now.day
-	hour = now.hour
-	minute = now.minute
-	second = now.second
-	r = az_alt('g', year, month, day, hour, minute, second, -34, 42, 05.5, 58, 19, 05.8, float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]))
-
-	print "Date UTC %dy %dm %dd" % (year, month, day)
-	print "Time UTC %dh %dm %ds" % (hour, minute, second)
-	print "Az. %dd %dm %ds" % (r[0][0], r[0][1], r[0][2])
-	print "Alt. %dd %dm %ds" % (r[1][0], math.fabs(r[1][1]), math.fabs(r[1][2]))
