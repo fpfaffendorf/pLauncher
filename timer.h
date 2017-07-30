@@ -19,7 +19,7 @@ class Timer
     void begin(unsigned long ticks);
 
     // Increment timer
-    void increment();
+    bool increment();
 
     // Reset timer
     void reset();

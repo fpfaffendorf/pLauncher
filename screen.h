@@ -6,7 +6,10 @@
 #define SCREEN_MOSI   11
 #define SCREEN_CS     10
 
-#define SCREEN_BACKLIGHT_AIO            3
+#define SCREEN_WIDTH  128
+#define SCREEN_HEIGHT  64
+
+#define SCREEN_BACKLIGHT_PWM            3
 #define SCREEN_DEFAULT_BACKLIGHT_LEVEL  2
 
 // U8glib Header
@@ -15,11 +18,17 @@
 // Line struct
 struct Line 
 {
-
   int x;
   int y;
-  String line;
-  
+  String line; 
+};
+
+// Grid enum
+enum Grid
+{
+  options_11,
+  argument,
+  list
 };
 
 // Screen Class
@@ -27,10 +36,6 @@ class Screen
 {
 
   private:
-
-    Line lines[10];
-
-    int current_line = 0;
 
     unsigned char current_backlight_level = SCREEN_DEFAULT_BACKLIGHT_LEVEL;
     unsigned char last_positive_backlight_level = SCREEN_DEFAULT_BACKLIGHT_LEVEL;
@@ -44,13 +49,13 @@ class Screen
     void clear();
 
     // Print string on x, y position 
-    void print(String string, int x, int y);
+    void print(Line* lines, int number_lines, Grid grid);
 
-    // Loading ...
+    // Loading screen ...
     void loading();
 
-    // Flush output to screen
-    void flush();
+    // Renders an xbm bitmap 
+    void render(String xbm_command);
 
     // Screen backlight level [0..9]
     void backlight_level(unsigned char level);

@@ -10,6 +10,7 @@ import datetime
 
 if len(sys.argv) == 2 and sys.argv[1] == "--help":
 
+	print "TXT"
 	print "RA Hour (Epoch 2000.0)"
 	print "RA Min (Epoch 2000.0)"
 	print "RA Sec (Epoch 2000.0)"

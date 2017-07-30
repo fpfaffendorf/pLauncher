@@ -1,5 +1,7 @@
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
+from lib import meeus
 import sys
+import math
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9,18 +11,26 @@ import sys
 if len(sys.argv) == 2 and sys.argv[1] == "--help":
 
 	print "TXT"
-	print "Operand"
-	print "Operator (1+ 2- 3* 4/)"
-	print "Operand"
+	print "Elevation (Ft)"
+	print "Air Temp (C)"
+	print "Altimeter (hPa)"
+	print "Rel Humidity %"
 
 else:
 
-	n1 = float(sys.argv[1])
-	o = float(sys.argv[2])
-	n2 = float(sys.argv[3])
+	elevation = float(sys.argv[1])
+	air_temp = float(sys.argv[2])
+	altimeter = float(sys.argv[3])
+	rel_humidity = float(sys.argv[4])
 
-	if (o == 1): print n1 + n2
-	elif (o == 2): print n1 - n2
-	elif (o == 3): print n1 * n2
-	elif (o == 4): print n1 / n2
-	else: print "Error"
+	altimeter_inch = altimeter * 29.92 / 1013.25
+
+	dew_point = 237.3/(1/(math.log(rel_humidity / 100)/17.27+air_temp/(air_temp+237.3))-1);
+	pressure_alt = ((1013 - altimeter) * 30) + elevation
+	isa_temp = 15 - (elevation * 2 / 1000)
+	density_alt = pressure_alt + (120 * (air_temp - isa_temp))
+
+	print "Dew Point     | %.2fC" % (dew_point)
+	print "Pressure Alt  | %dft" % (pressure_alt)
+	print "Density Alt   | %dft" % (density_alt)
+	print "Pressure \"Hg  | %.2f" % (altimeter_inch)

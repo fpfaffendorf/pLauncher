@@ -10,7 +10,7 @@
 
 // Keyboard begin
 void Keyboard::begin(void (* keyboard_reset_event), void (* keyboard_time_out_event))
-{
+{ 
   // Use external reference for Analog Input
   analogReference(EXTERNAL);
   // Timer time out ticks
@@ -46,7 +46,8 @@ unsigned char Keyboard::scan()
             // Reset timer
             timer.reset();
             // Return key pressed
-            return i + 1;
+            if (!timer_timed_out) return i + 1;
+            else delay(250);
           }
         }   
       }
@@ -54,7 +55,7 @@ unsigned char Keyboard::scan()
     else
     {
       // Increment timer
-      timer.increment();
+      timer_timed_out = timer.increment();
     }
 
   }

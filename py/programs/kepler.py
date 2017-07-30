@@ -9,6 +9,7 @@ import sys
 
 if len(sys.argv) == 2 and sys.argv[1] == "--help":
 
+	print "TXT"
 	print "Mean Anomaly (degree)"
 	print "Eccentricity"
 	print "Semi-major axis"

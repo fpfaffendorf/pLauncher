@@ -2,6 +2,7 @@ import sys
 
 if (sys.argv[1] == "--help"):
 
+	print "TXT"
 	print "Lat Degrees"
 	print "Lat Minutes"
 	print "Lat Seconds"

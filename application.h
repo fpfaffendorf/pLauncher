@@ -12,10 +12,7 @@
 #include "timer.h"
 
 // Application name and version
-#define APPLICATION_INFO "pLauncher v1.3"
-
-// Max number of programs per page
-#define MAX_NUMBER_PROGRAMS 6
+#define APPLICATION_INFO "pLauncher v1.4"
 
 // Backlight timer time out ticks
 #define BACKLIGHT_TIMER_TIME_OUT_TICKS  250000 // (~30 seconds)
@@ -26,41 +23,47 @@ class Application
 
   private:
 
-    // Process instance
-    Process process;    
-
     // Programs Current Page
-    unsigned char programs_page = 0;
+    unsigned char programs_page = 1;
+
+    // Next page request flag
+    bool programs_next_page = false;
+
+    // Current directory listing
+    String current_directory = "";
+
+    // Program to be executed
+    String program_to_execute = "";
 
     // List programs in a given directory
-    void list_programs(String directory);
+    void menu();
   
-    // Format program option
-    String format_program_option(unsigned char option, String title);
-
+    // List programs in a given directory
+    void list_programs();
+  
     // Execute program
-    void execute(String program);
+    void execute();
 
-    // Capture argument
-    String capture_argument(String argument_title);
+    // Capture numeric argument
+    String capture_numeric_argument(String argument_title);
 
     // Screen Backlight
     void screen_backlight();
 
-    // Keyboard reset timer function
-    static void keyboard_reset_event();
-
-    // Keyboard time out function
-    static void keyboard_time_out_event();
-  
   public:
 
     // Begin application
     void begin();
     
     // Menu screen
-    void menu();
-        
+    void main();
+
+    // Keyboard reset timer function
+    static void keyboard_reset_event();
+
+    // Keyboard time out function
+    static void keyboard_time_out_event();
+          
 };
 
 extern Application application;

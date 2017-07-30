@@ -8,18 +8,20 @@ void Timer::begin(unsigned long ticks)
   time_out_ticks = ticks;
 }
 
-void Timer::increment()
+bool Timer::increment()
 {
 
   // Timer is not set
-  if (time_out_ticks == 0) return;
+  if (time_out_ticks == 0) return false;
 
   if (timer < time_out_ticks) timer ++;
   if (timer == time_out_ticks)
   {
     time_out_event();
-    timer = 0;
+    return true;
   }
+
+  return false;
   
 }
 

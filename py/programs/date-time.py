@@ -10,6 +10,7 @@ import datetime
 
 if len(sys.argv) > 1 and sys.argv[1] == "--help":
 
+	print "TXT"
 	quit()
 
 else:
@@ -24,3 +25,4 @@ else:
 	print "TDT %02d:%02d:%02d %d/%02d/%02d" % (tdtnow[3], tdtnow[4], tdtnow[5], tdtnow[0], tdtnow[1], tdtnow[2])
 	print "Loc JD %.2f" % (meeus.jd ("g", locnow.year, locnow.month, locnow.day, locnow.hour, locnow.minute, locnow.second)) 
 	print "UT  JD %.2f" % (meeus.jd ("g", utcnow.year, utcnow.month, utcnow.day, utcnow.hour, utcnow.minute, utcnow.second))
+	print "Prueba"

@@ -12,5 +12,5 @@ void setup()
 void loop()
 {
   // Show menu
-  application.menu();     
+  application.main();     
 }

@@ -37,7 +37,11 @@ class Keyboard
 
   private:
 
+    // Power consumption timer
     Timer timer;
+
+    // Timer timed out
+    bool timer_timed_out = false;
   
     // Buttons analog values
     unsigned int buttons[KEYBOARD_NUMBER_BUTTONS] = { 1023, 930, 854, 799, 678, 636, 599, 571, 518, 493, 471, 453, 411, 330, 276, 238 };
@@ -49,6 +53,13 @@ class Keyboard
     
     // Scan button pressed
     unsigned char scan();
+
+    // Numeric buttons
+    const unsigned char numeric_buttons[10] = { 
+      KEYBOARD_0, KEYBOARD_1, KEYBOARD_2, KEYBOARD_3, KEYBOARD_4, 
+      KEYBOARD_5, KEYBOARD_6, KEYBOARD_7, KEYBOARD_8, KEYBOARD_9
+    }; 
+
 
 };
 
